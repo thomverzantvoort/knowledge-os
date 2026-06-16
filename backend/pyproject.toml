@@ -1,12 +1,34 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "knowledge-os-backend"
 version = "0.1.0"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "alembic>=1.18.4",
+    "feedparser>=6.0.12",
+    "psycopg[binary]>=3.3.4",
+    "pydantic>=2.13.4",
+    "pydantic-settings>=2.14.1",
+    "sqlalchemy>=2.0.50",
+    "youtube-transcript-api>=1.2.4",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
 
 [tools.uv]
 add-bounds = "exact"
 exclude-newer = "7 days"
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.3.0",
+    "pytest>=9.0.3",
+    "ruff>=0.15.16",
+]
 
 
 
