@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     enrichment_transcript_max_seconds: int = 900
     enrichment_window_hours: int | None = None
 
+    allowed_origins: str = "http://localhost:5173"
+
     @computed_field
     @property
     def database_url(self) -> str:
@@ -39,6 +41,15 @@ class Settings(BaseSettings):
             f"postgresql+psycopg://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
         )
+
+    @computed_field
+    @property
+    def cors_origins(self) -> list[str]:
+        return [
+            origin.strip()
+            for origin in self.allowed_origins.split(",")
+            if origin.strip()
+        ]
 
 
 @lru_cache
