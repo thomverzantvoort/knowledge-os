@@ -1,15 +1,15 @@
 from enum import StrEnum
 
 
-class SourceKind(StrEnum):
+class SubscriptionKind(StrEnum):
     YOUTUBE_CHANNEL = "youtube_channel"
 
 
-class ContentItemKind(StrEnum):
+class ContentKind(StrEnum):
     VIDEO = "video"
 
 
-class TranscriptStatus(StrEnum):
+class BodyStatus(StrEnum):
     PENDING = "pending"
     AVAILABLE = "available"
     UNAVAILABLE = "unavailable"

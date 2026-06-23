@@ -8,11 +8,13 @@ Not a corpus-wide RAG engine yet. **Ingest wide, process deep only for what you 
 
 ## Three MVP surfaces
 
-| Surface | Purpose |
-|---------|---------|
+
+| Surface           | Purpose                                                         |
+| ----------------- | --------------------------------------------------------------- |
 | **Weekly digest** | New content in a time window, ranked/scored for you, quick skim |
-| **Library** | All ingested videos; filter kept vs everything |
-| **Chat** | Select kept video(s), ask questions, get answers with citations |
+| **Library**       | All ingested videos; filter kept vs everything                  |
+| **Chat**          | Select kept video(s), ask questions, get answers with citations |
+
 
 ---
 
@@ -44,12 +46,14 @@ Triggered when you mark a video as kept (or on first deep-dive):
 
 ## What each artifact is for
 
-| Artifact | Used for |
-|----------|----------|
-| Raw transcript | Source of truth, chunking, citations, reprocessing |
-| Digest blurb | Weekly cards, library previews, sorting |
+
+| Artifact            | Used for                                            |
+| ------------------- | --------------------------------------------------- |
+| Raw transcript      | Source of truth, chunking, citations, reprocessing  |
+| Digest blurb        | Weekly cards, library previews, sorting             |
 | Timestamped outline | Skimming, chapters, jump links (`?t=`), detail page |
-| Embedded chunks | Chat retrieval (evidence with timestamps) |
+| Embedded chunks     | Chat retrieval (evidence with timestamps)           |
+
 
 **Chat grounds on retrieved raw chunks, not the full transcript and not the summary.**
 
@@ -57,12 +61,12 @@ Triggered when you mark a video as kept (or on first deep-dive):
 
 ## MVP build order
 
-1. **Ingest** channel videos in a window (e.g. 336h initially) → persist metadata, thumbnail, raw transcript  
-2. **Digest job** → blurb + tags (+ basic relevance) for each new item  
-3. **Weekly digest UI** → cards with blurb, thumbnail, watch link, **keep / dismiss**  
-4. **Library UI** → all videos + filter kept  
-5. **Deep processing job** → on kept: outline + chunk + embed  
-6. **Chat UI** → select kept video(s), Q&A with timestamp citations  
+1. **Ingest** channel videos in a window (e.g. 336h initially) → persist metadata, thumbnail, raw transcript
+2. **Digest job** → blurb + tags (+ basic relevance) for each new item
+3. **Weekly digest UI** → cards with blurb, thumbnail, watch link, **keep / dismiss**
+4. **Library UI** → all videos + filter kept
+5. **Deep processing job** → on kept: outline + chunk + embed
+6. **Chat UI** → select kept video(s), Q&A with timestamp citations
 
 ---
 
@@ -72,7 +76,7 @@ Triggered when you mark a video as kept (or on first deep-dive):
 - Full-transcript LLM passes for digest  
 - Cross-channel “ask my whole corpus” RAG  
 - Perfect backfill beyond RSS limits (accept ~15 recent per feed for now, extend later)  
-- Production scraping infra (proxies, etc.)  
+- Production scraping infra (proxies, etc.)
 
 ---
 
