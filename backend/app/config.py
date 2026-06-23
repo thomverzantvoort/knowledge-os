@@ -26,6 +26,12 @@ class Settings(BaseSettings):
     transcript_languages: list[str] = ["en", "nl"]
     exclude_shorts: bool = True
 
+    openai_api_key: str | None = None
+    openai_simple_model: str = "gpt-5.4-nano"
+    openai_model: str = "gpt-5.4-mini"
+    enrichment_transcript_max_seconds: int = 900
+    enrichment_window_hours: int | None = None
+
     @computed_field
     @property
     def database_url(self) -> str:

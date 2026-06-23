@@ -19,5 +19,11 @@ class ProcessingStatus(StrEnum):
     INGESTED = "ingested"
 
 
+class UserStatus(StrEnum):
+    UNREAD = "unread"
+    INTERESTED = "interested"
+    DISMISSED = "dismissed"
+
+
 class BodyKind(StrEnum):
     TRANSCRIPT = "transcript"

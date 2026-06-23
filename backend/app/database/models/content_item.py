@@ -10,10 +10,16 @@ from sqlalchemy import (
     UniqueConstraint,
     Uuid,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import Base, TimestampMixin
-from app.database.models.enums import BodyStatus, ContentKind, ProcessingStatus
+from app.database.models.enums import (
+    BodyStatus,
+    ContentKind,
+    ProcessingStatus,
+    UserStatus,
+)
 
 
 class ContentItem(Base, TimestampMixin):
@@ -56,3 +62,9 @@ class ContentItem(Base, TimestampMixin):
         nullable=False,
         default=ProcessingStatus.INGESTED,
     )
+    user_status: Mapped[UserStatus] = mapped_column(
+        Enum(UserStatus, name="user_status", native_enum=True),
+        nullable=False,
+        default=UserStatus.UNREAD,
+    )
+    enrichment: Mapped[dict | None] = mapped_column(JSONB, nullable=True)

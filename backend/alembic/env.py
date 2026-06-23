@@ -5,7 +5,13 @@ from sqlalchemy import engine_from_config, pool
 
 from app.config import settings
 from app.database.base import Base
-from app.database.models import ContentBody, ContentItem, Subscription  # noqa: F401
+from app.database.models import (  # noqa: F401
+    ContentArtifact,
+    ContentBody,
+    ContentItem,
+    Subscription,
+    UserInterestProfile,
+)
 
 config = context.config
 
