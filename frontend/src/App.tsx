@@ -1,37 +1,24 @@
-import { useState } from 'react'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
-import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { AuthProvider } from '@/lib/auth'
+import { LibraryPage } from '@/pages/LibraryPage'
+import { LoginPage } from '@/pages/LoginPage'
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <div className="flex min-h-svh items-center justify-center bg-background p-6">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Knowledge OS</CardTitle>
-          <CardDescription>
-            shadcn and Vite are wired up. Click the button to test interactivity.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">Count: {count}</p>
-        </CardContent>
-        <CardFooter>
-          <Button onClick={() => setCount((value) => value + 1)}>
-            Increment
-          </Button>
-        </CardFooter>
-      </Card>
-    </div>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/library" element={<LibraryPage />} />
+          </Route>
+          <Route path="/" element={<Navigate to="/library" replace />} />
+          <Route path="*" element={<Navigate to="/library" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   )
 }
 
