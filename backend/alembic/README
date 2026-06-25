@@ -1,1 +1,40 @@
-Generic single-database configuration.
+Alembic migration environment for Knowledge-OS.
+
+## Rules
+
+- Alembic is the only way to change the production schema. Do not alter tables manually.
+- Every generated migration must be reviewed before applying. Autogenerate can miss things (e.g. enum changes, index renames).
+- Use the direct session connection (`postgresql+psycopg://`), not the transaction pooler URL.
+- Run from the `backend/` directory, not the repo root.
+
+## Common commands
+
+```bash
+# Apply all pending migrations
+uv run alembic upgrade head
+
+# Create a new migration from model changes
+uv run alembic revision --autogenerate -m "describe the change"
+
+# Show current revision
+uv run alembic current
+
+# Show migration history
+uv run alembic history --verbose
+
+# Roll back one step
+uv run alembic downgrade -1
+```
+
+## Applied migrations
+
+| Revision       | Description                                                   |
+| -------------- | ------------------------------------------------------------- |
+| `b53116d551c5` | Initial schema (sources/source_id naming)                     |
+| `c8a2f1e94b3d` | Rename sources → subscriptions, source_id → subscription_id   |
+| `5ccd309c2a94` | Add digest schema: user_status, enrichment JSONB, user_interest_profiles |
+| `529159d4d546` | Add content_artifacts table                                   |
+
+## Notes on enum changes
+
+Adding values to a PostgreSQL enum (`ALTER TYPE ... ADD VALUE`) cannot be rolled back once committed. Document this in the migration docstring when it applies. Removing an enum value is not possible in PostgreSQL without recreating the type.

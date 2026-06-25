@@ -4,11 +4,12 @@ This file is the source of truth for any coding agent (Claude Code, Cursor, Code
 
 ## Stack
 
-- **Backend:** Python + FastAPI
-- **Frontend:** Not decided 
-- **Database:** Postgres
+- **Backend:** Python 3.12+ + FastAPI + uvicorn
+- **Frontend:** React 19 + Vite + TypeScript + Tailwind CSS + shadcn (radix-luma style)
+- **Database:** Postgres 17
 - **Migrations:** SQLAlchemy models + Alembic from the backend
-- **LLM + embeddings:** not decided
+- **LLM:** OpenAI (configurable model via `OPENAI_MODEL` / `OPENAI_SIMPLE_MODEL`)
+- **Auth:** Single-user JWT (bcrypt password hash in env, `pyjwt` signing)
 
 Stack is locked unless explicitly changed. Don't propose alternatives without a stated reason.
 
@@ -31,7 +32,7 @@ knowledge-os/
 OK to depend on:
 
 - Things that are genuinely hard to get right (HTTP clients, ASGI servers, SQL drivers, parsers, LLM SDKs, ORM, migrations, auth SDKs).
-- The declared stack (FastAPI, React, Vite, Supabase clients, OpenAI SDK, etc.).
+- The declared stack (FastAPI, React, Vite, OpenAI SDK, shadcn, etc.).
 
 Not OK:
 
@@ -49,7 +50,7 @@ Per-stack specifics live in `backend/AGENTS.md` and `frontend/AGENTS.md`.
 
 ## Configuration
 
-A single settings module is the source of truth for environment per service (`backend/app/config.py`, `frontend/lib/env.ts`). Do not call `os.getenv` / read `process.env` directly in app code. Do not call `load_dotenv` anywhere. If a third-party SDK reads env vars directly, mirror them in the settings module — don't sprinkle `setdefault` elsewhere.
+A single settings module is the source of truth for environment per service (`backend/app/config.py`, `frontend/src/lib/env.ts`). Do not call `os.getenv` / read `process.env` directly in app code. Do not call `load_dotenv` anywhere. If a third-party SDK reads env vars directly, mirror them in the settings module — don't sprinkle `setdefault` elsewhere.
 
 Fail fast on startup if required config is missing. No silent fallbacks that hide real config errors.
 
