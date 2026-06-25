@@ -34,11 +34,25 @@ class Settings(BaseSettings):
 
     allowed_origins: str = "http://localhost:5173"
 
+    auth_username: str
+    auth_password_hash: str
+    jwt_secret: str
+    jwt_expire_minutes: int = 60 * 24 * 7
+    auth_cookie_secure: bool = False
+
     @computed_field
     @property
     def database_url(self) -> str:
         return (
             f"postgresql+psycopg://{self.postgres_user}:{self.postgres_password}"
+            f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
+        )
+
+    @computed_field
+    @property
+    def async_database_url(self) -> str:
+        return (
+            f"postgresql+psycopg_async://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
         )
 
