@@ -1,4 +1,5 @@
 import type { ContentItem } from '@/lib/types'
+import { UserStatusBadge } from '@/components/UserStatusBadge'
 import { Badge } from '@/components/ui/badge'
 import {
   Card,
@@ -7,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
 
 function formatPublishedAt(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, {
@@ -30,32 +32,67 @@ function previewText(item: ContentItem): string {
 
 type ContentCardProps = {
   item: ContentItem
+  onSelect?: (item: ContentItem) => void
 }
 
-export function ContentCard({ item }: ContentCardProps) {
+export function ContentCard({ item, onSelect }: ContentCardProps) {
   const tags = item.enrichment?.tags ?? []
+  const isSelectable = Boolean(onSelect)
 
   return (
-    <Card className="h-full overflow-hidden">
+    <Card
+      className={cn(
+        'h-full overflow-hidden',
+        isSelectable && 'cursor-pointer transition-colors hover:bg-muted/40',
+      )}
+      onClick={isSelectable ? () => onSelect?.(item) : undefined}
+      onKeyDown={
+        isSelectable
+          ? (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                onSelect?.(item)
+              }
+            }
+          : undefined
+      }
+      role={isSelectable ? 'button' : undefined}
+      tabIndex={isSelectable ? 0 : undefined}
+    >
       {item.thumbnail_url ? (
-        <a href={item.url} target="_blank" rel="noreferrer">
+        isSelectable ? (
           <img
             src={item.thumbnail_url}
             alt=""
             className="aspect-video w-full object-cover"
           />
-        </a>
+        ) : (
+          <a href={item.url} target="_blank" rel="noreferrer">
+            <img
+              src={item.thumbnail_url}
+              alt=""
+              className="aspect-video w-full object-cover"
+            />
+          </a>
+        )
       ) : null}
       <CardHeader>
+        <div className="mb-2">
+          <UserStatusBadge status={item.user_status} />
+        </div>
         <CardTitle className="line-clamp-2 text-base leading-snug">
-          <a
-            href={item.url}
-            target="_blank"
-            rel="noreferrer"
-            className="hover:underline"
-          >
-            {item.title}
-          </a>
+          {isSelectable ? (
+            item.title
+          ) : (
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noreferrer"
+              className="hover:underline"
+            >
+              {item.title}
+            </a>
+          )}
         </CardTitle>
         <CardDescription>
           {[item.author, formatPublishedAt(item.published_at)]

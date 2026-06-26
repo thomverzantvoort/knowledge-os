@@ -23,7 +23,7 @@ export function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   if (isAuthenticated) {
-    return <Navigate to="/library" replace />
+    return <Navigate to="/history" replace />
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {

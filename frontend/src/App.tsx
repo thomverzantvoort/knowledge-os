@@ -1,8 +1,9 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
+import { AppLayout } from '@/components/AppLayout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { AuthProvider } from '@/lib/auth'
-import { LibraryPage } from '@/pages/LibraryPage'
+import { HistoryPage } from '@/pages/HistoryPage'
 import { LoginPage } from '@/pages/LoginPage'
 
 function App() {
@@ -12,10 +13,13 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route element={<ProtectedRoute />}>
-            <Route path="/library" element={<LibraryPage />} />
+            <Route element={<AppLayout />}>
+              <Route path="/history" element={<HistoryPage />} />
+            </Route>
           </Route>
-          <Route path="/" element={<Navigate to="/library" replace />} />
-          <Route path="*" element={<Navigate to="/library" replace />} />
+          <Route path="/library" element={<Navigate to="/history" replace />} />
+          <Route path="/" element={<Navigate to="/history" replace />} />
+          <Route path="*" element={<Navigate to="/history" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { ContentCard } from '@/components/ContentCard'
+import { ItemPreviewPanel } from '@/components/ItemPreviewPanel'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -11,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useAuth } from '@/hooks/use-auth'
-import { ApiError, fetchItems } from '@/lib/api'
+import { ApiError, fetchHistoryItems } from '@/lib/api'
 import {
   TIME_WINDOW_LABELS,
   type ContentItem,
@@ -20,11 +21,12 @@ import {
 
 const PAGE_SIZE = 50
 
-type LibraryFeedProps = {
+type HistoryFeedProps = {
   window: TimeWindow
+  onSelect: (item: ContentItem) => void
 }
 
-function LibraryFeed({ window }: LibraryFeedProps) {
+function HistoryFeed({ window, onSelect }: HistoryFeedProps) {
   const { logout } = useAuth()
   const navigate = useNavigate()
   const [items, setItems] = useState<ContentItem[] | null>(null)
@@ -36,7 +38,7 @@ function LibraryFeed({ window }: LibraryFeedProps) {
   useEffect(() => {
     let cancelled = false
 
-    fetchItems({ window, limit: PAGE_SIZE, offset: 0 })
+    fetchHistoryItems({ window, limit: PAGE_SIZE, offset: 0 })
       .then((response) => {
         if (cancelled) {
           return
@@ -72,7 +74,7 @@ function LibraryFeed({ window }: LibraryFeedProps) {
     setIsLoadingMore(true)
     setError(null)
 
-    fetchItems({ window, limit: PAGE_SIZE, offset })
+    fetchHistoryItems({ window, limit: PAGE_SIZE, offset })
       .then((response) => {
         setItems((current) => [...(current ?? []), ...response.items])
         setTotal(response.total)
@@ -122,7 +124,7 @@ function LibraryFeed({ window }: LibraryFeedProps) {
     <>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {items.map((item) => (
-          <ContentCard key={item.id} item={item} />
+          <ContentCard key={item.id} item={item} onSelect={onSelect} />
         ))}
       </div>
       {hasMore ? (
@@ -140,46 +142,62 @@ function LibraryFeed({ window }: LibraryFeedProps) {
   )
 }
 
-export function LibraryPage() {
-  const { logout } = useAuth()
-  const [window, setWindow] = useState<TimeWindow>('168')
+export function HistoryPage() {
+  const [window, setWindow] = useState<TimeWindow>('all')
+  const [selectedItem, setSelectedItem] = useState<ContentItem | null>(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
+
+  function handleSelect(item: ContentItem) {
+    setSelectedItem(item)
+    setPreviewOpen(true)
+  }
+
+  function handlePreviewOpenChange(open: boolean) {
+    setPreviewOpen(open)
+    if (!open) {
+      setSelectedItem(null)
+    }
+  }
 
   return (
-    <div className="min-h-svh bg-background">
-      <header className="border-b border-border">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-6 py-4">
+    <div className="flex h-full min-h-0 flex-col">
+      <header className="shrink-0 border-b border-border">
+        <div className="flex min-h-[5.5rem] flex-wrap items-center justify-between gap-4 px-6 py-4">
           <div>
-            <h1 className="font-heading text-xl font-medium">Library</h1>
-            <p className="text-sm text-muted-foreground">Your ingested content</p>
+            <h1 className="font-heading text-xl font-medium">History</h1>
+            <p className="text-sm text-muted-foreground">
+              Everything you&apos;ve ingested
+            </p>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Select
-              value={window}
-              onValueChange={(value) => setWindow(value as TimeWindow)}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {(Object.keys(TIME_WINDOW_LABELS) as TimeWindow[]).map(
-                  (key) => (
-                    <SelectItem key={key} value={key}>
-                      {TIME_WINDOW_LABELS[key]}
-                    </SelectItem>
-                  ),
-                )}
-              </SelectContent>
-            </Select>
-            <Button variant="outline" onClick={logout}>
-              Sign out
-            </Button>
-          </div>
+          <Select
+            value={window}
+            onValueChange={(value) => setWindow(value as TimeWindow)}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(Object.keys(TIME_WINDOW_LABELS) as TimeWindow[]).map((key) => (
+                <SelectItem key={key} value={key}>
+                  {TIME_WINDOW_LABELS[key]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-6">
-        <LibraryFeed key={window} window={window} />
+      <main className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
+        <div className="mx-auto max-w-5xl">
+          <HistoryFeed key={window} window={window} onSelect={handleSelect} />
+        </div>
       </main>
+
+      <ItemPreviewPanel
+        item={selectedItem}
+        open={previewOpen}
+        onOpenChange={handlePreviewOpenChange}
+      />
     </div>
   )
 }

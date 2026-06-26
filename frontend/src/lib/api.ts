@@ -79,7 +79,7 @@ export async function login(
   )
 }
 
-export async function fetchItems(params: {
+export async function fetchHistoryItems(params: {
   window: TimeWindow
   limit: number
   offset: number
