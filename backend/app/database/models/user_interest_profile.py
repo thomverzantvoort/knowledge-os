@@ -1,10 +1,11 @@
 import uuid
 
-from sqlalchemy import Integer, Text, Uuid
+from sqlalchemy import Enum, Integer, String, Text, Uuid
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import Base, TimestampMixin
+from app.database.models.enums import OutputLanguage
 
 
 class UserInterestProfile(Base, TimestampMixin):
@@ -15,3 +16,8 @@ class UserInterestProfile(Base, TimestampMixin):
     domain_weights: Mapped[dict] = mapped_column(JSONB, nullable=False)
     context_prose: Mapped[str | None] = mapped_column(Text)
     channel_notes: Mapped[dict | None] = mapped_column(JSONB)
+    output_language: Mapped[OutputLanguage] = mapped_column(
+        Enum(OutputLanguage, name="output_language", native_enum=True),
+        nullable=False,
+        default=OutputLanguage.CONTENT,
+    )

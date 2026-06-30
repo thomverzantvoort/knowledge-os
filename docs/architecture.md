@@ -163,7 +163,7 @@ Reserved for deep-processed output (timestamped outline, chapter summaries). Wri
 | ------------------ | ----------- | ------------------------- |
 | `id`               | UUID        | PK                        |
 | `content_item_id`  | UUID        | FK → `content_items.id`   |
-| `summary`          | text        | Nullable                  |
+| `summary`          | JSONB       | Nullable. Structured `SummaryResult` (overview, takeaways, actionable, etc.) |
 | `chapters`         | JSONB       | Nullable                  |
 | `model`            | string      | Model used                |
 | `generated_at`     | timestamptz |                           |
@@ -203,6 +203,8 @@ Applied in order:
 | `c8a2f1e94b3d` | Rename `sources` → `subscriptions` |
 | `5ccd309c2a94` | Add digest schema: `user_status`, `enrichment`, `user_interest_profiles` |
 | `529159d4d546` | Add `content_artifacts` table |
+| `8f3a2b1c4d5e` | Add `output_language` to `user_interest_profiles` |
+| `2a4b6c8d0e1f` | `content_artifacts.summary` Text → JSONB |
 
 Run from `backend/`:
 
@@ -465,6 +467,11 @@ app/
 │   ├── client.py
 │   ├── factory.py
 │   └── openai.py
+├── prompts/                        # System prompt markdown files + loader
+│   ├── loader.py
+│   ├── digest.system.md
+│   ├── deep_outline.system.md
+│   └── deep_summary.system.md
 └── retrieval/                      # not built — search + chat (north-star tier 3)
 ```
 

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database.models.content_body import ContentBody
 from app.database.models.content_item import ContentItem
-from app.database.models.enums import BodyKind, BodyStatus
+from app.database.models.enums import BodyKind, BodyStatus, OutputLanguage
 from app.database.models.user_interest_profile import UserInterestProfile
 from app.processing.digest import InterestProfileInput, run_digest
 from app.processing.operations.enrichment import (
@@ -69,6 +69,7 @@ def _enrich_item(
         context_prose=profile.context_prose,
         channel_notes=profile.channel_notes,
         author=item.author,
+        output_language=profile.output_language,
     )
     result = run_digest(
         title=item.title,

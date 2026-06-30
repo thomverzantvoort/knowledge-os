@@ -27,3 +27,9 @@ class UserStatus(StrEnum):
 
 class BodyKind(StrEnum):
     TRANSCRIPT = "transcript"
+
+
+class OutputLanguage(StrEnum):
+    EN = "en"
+    NL = "nl"
+    CONTENT = "content"

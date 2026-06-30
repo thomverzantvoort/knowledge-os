@@ -2,6 +2,7 @@ import logging
 
 from sqlalchemy import func, select
 
+from app.database.models.enums import OutputLanguage
 from app.database.models.user_interest_profile import UserInterestProfile
 from app.database.session import get_session
 
@@ -40,6 +41,8 @@ DEFAULT_CHANNEL_NOTES = {
     "deprioritize": ["reaction", "drama", "hype", "sponsor"],
 }
 
+DEFAULT_OUTPUT_LANGUAGE = OutputLanguage.CONTENT
+
 
 def seed_interest_profile(session) -> bool:
     existing = session.scalar(select(func.count()).select_from(UserInterestProfile))
@@ -51,6 +54,7 @@ def seed_interest_profile(session) -> bool:
         domain_weights=DEFAULT_DOMAIN_WEIGHTS,
         context_prose=DEFAULT_CONTEXT_PROSE,
         channel_notes=DEFAULT_CHANNEL_NOTES,
+        output_language=DEFAULT_OUTPUT_LANGUAGE,
     )
     session.add(profile)
     return True

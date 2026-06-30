@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint, Uuid
+from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint, Uuid
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -23,7 +23,7 @@ class ContentArtifact(Base, TimestampMixin):
         ForeignKey("content_items.id", ondelete="CASCADE"),
         nullable=False,
     )
-    summary: Mapped[str | None] = mapped_column(Text)
+    summary: Mapped[dict | None] = mapped_column(JSONB)
     chapters: Mapped[list | None] = mapped_column(JSONB)
     model: Mapped[str | None] = mapped_column(String(128))
     generated_at: Mapped[datetime] = mapped_column(

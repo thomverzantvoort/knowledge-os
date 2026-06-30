@@ -83,6 +83,7 @@ def probe_digest(
             context_prose=profile.context_prose,
             channel_notes=profile.channel_notes,
             author=item.author,
+            output_language=profile.output_language,
         )
         messages = build_digest_messages(
             title=item.title,
