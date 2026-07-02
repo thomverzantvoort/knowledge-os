@@ -121,7 +121,7 @@ Chat for a single saved video (MVP):
 | 4    | Inbox Zero UI → preview panel, Save / Pass, status PATCH    | Next     |
 | 5    | History UI → all items, chronological                       | Next     |
 | 6    | Library UI → saved only, Outline \| Summary detail            | Next     |
-| 7    | Deep job on Save → outline + detailed summary               | Next     |
+| 7    | Deep job on Save → outline + detailed summary               | Done     |
 | 8    | Chat UI → per-video view, full transcript, citations        | Next     |
 | 9    | History channel filter / search                             | Later    |
 | 10   | Improve blurb prompt (personal “for me / skip” framing)     | Ongoing  |

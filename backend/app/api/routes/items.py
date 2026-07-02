@@ -1,15 +1,26 @@
+import asyncio
 from datetime import UTC, datetime, timedelta
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 
 from app.api.auth import get_current_user
 from app.api.deps import DbSession
-from app.api.schemas import ContentItemOut, EnrichmentOut, PaginatedItemsOut
+from app.api.schemas import (
+    ArtifactOut,
+    ContentItemDetailOut,
+    ContentItemOut,
+    EnrichmentOut,
+    PaginatedItemsOut,
+    StatusUpdateIn,
+)
+from app.database.models.content_artifact import ContentArtifact
 from app.database.models.content_item import ContentItem
 from app.database.models.enums import UserStatus
+from app.processing.operations.artifacts import artifact_is_complete
+from app.processing.runner import run_deep_for_item
 
 router = APIRouter(prefix="/items", tags=["items"])
 
@@ -34,6 +45,17 @@ def _enrichment_from_row(data: dict | None) -> EnrichmentOut | None:
     )
 
 
+def _artifact_to_out(artifact: ContentArtifact | None) -> ArtifactOut | None:
+    if not artifact_is_complete(artifact):
+        return None
+    return ArtifactOut(
+        chapters=artifact.chapters,
+        summary=artifact.summary,
+        model=artifact.model,
+        generated_at=artifact.generated_at,
+    )
+
+
 def _item_to_out(item: ContentItem) -> ContentItemOut:
     return ContentItemOut(
         id=item.id,
@@ -46,8 +68,24 @@ def _item_to_out(item: ContentItem) -> ContentItemOut:
         published_at=item.published_at,
         kind=item.kind,
         user_status=item.user_status,
+        processing_status=item.processing_status,
         enrichment=_enrichment_from_row(item.enrichment),
     )
+
+
+def _item_to_detail_out(
+    item: ContentItem,
+    artifact: ContentArtifact | None,
+) -> ContentItemDetailOut:
+    base = _item_to_out(item)
+    return ContentItemDetailOut(
+        **base.model_dump(),
+        artifact=_artifact_to_out(artifact),
+    )
+
+
+def schedule_deep_processing(item_id: UUID) -> None:
+    asyncio.create_task(asyncio.to_thread(run_deep_for_item, item_id))
 
 
 @router.get("", response_model=PaginatedItemsOut)
@@ -95,3 +133,44 @@ async def list_items(
         limit=limit,
         offset=offset,
     )
+
+
+@router.get("/{item_id}", response_model=ContentItemDetailOut)
+async def get_item(
+    item_id: UUID,
+    db: DbSession,
+    _user: Annotated[str, Depends(get_current_user)],
+) -> ContentItemDetailOut:
+    item = await db.get(ContentItem, item_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Content item not found")
+
+    artifact = await db.scalar(
+        select(ContentArtifact).where(ContentArtifact.content_item_id == item_id)
+    )
+    return _item_to_detail_out(item, artifact)
+
+
+@router.patch("/{item_id}/status", response_model=ContentItemOut)
+async def update_item_status(
+    item_id: UUID,
+    body: StatusUpdateIn,
+    db: DbSession,
+    _user: Annotated[str, Depends(get_current_user)],
+) -> ContentItemOut:
+    item = await db.get(ContentItem, item_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Content item not found")
+
+    item.user_status = body.status
+    await db.commit()
+    await db.refresh(item)
+
+    if body.status == UserStatus.INTERESTED:
+        artifact = await db.scalar(
+            select(ContentArtifact).where(ContentArtifact.content_item_id == item_id)
+        )
+        if not artifact_is_complete(artifact):
+            schedule_deep_processing(item.id)
+
+    return _item_to_out(item)

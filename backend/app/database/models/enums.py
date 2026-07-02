@@ -17,6 +17,7 @@ class BodyStatus(StrEnum):
 
 class ProcessingStatus(StrEnum):
     INGESTED = "ingested"
+    FAILED = "failed"
 
 
 class UserStatus(StrEnum):

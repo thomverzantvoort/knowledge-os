@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.database.models.enums import ContentKind, UserStatus
+from app.database.models.enums import ContentKind, ProcessingStatus, UserStatus
 
 
 class EnrichmentOut(BaseModel):
@@ -27,7 +27,19 @@ class ContentItemOut(BaseModel):
     published_at: datetime
     kind: ContentKind
     user_status: UserStatus
+    processing_status: ProcessingStatus
     enrichment: EnrichmentOut | None
+
+
+class ArtifactOut(BaseModel):
+    chapters: list[dict]
+    summary: dict
+    model: str | None
+    generated_at: datetime
+
+
+class ContentItemDetailOut(ContentItemOut):
+    artifact: ArtifactOut | None
 
 
 class SubscriptionOut(BaseModel):

@@ -10,6 +10,8 @@ export type Enrichment = {
 
 export type UserStatus = 'unread' | 'interested' | 'dismissed'
 
+export type ProcessingStatus = 'ingested' | 'failed'
+
 export const USER_STATUS_LABELS: Record<UserStatus, string> = {
   unread: 'New',
   interested: 'Saved',
@@ -27,6 +29,7 @@ export type ContentItem = {
   published_at: string
   kind: string
   user_status: UserStatus
+  processing_status: ProcessingStatus
   enrichment: Enrichment | null
 }
 

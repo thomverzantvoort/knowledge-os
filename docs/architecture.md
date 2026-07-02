@@ -113,7 +113,7 @@ Metadata for one published video or article.
 | `author`                   | string      | Channel name or newsletter author                           |
 | `published_at`             | timestamptz | Indexed                                                     |
 | `body_status`              | enum        | `pending`, `available`, `unavailable`                       |
-| `processing_status`        | enum        | `ingested` for now; `kept` etc. later                       |
+| `processing_status`        | enum        | `ingested`, `failed` (deep job errors)                      |
 | `user_status`              | enum        | `unread` (default), `interested`, `dismissed`               |
 | `enrichment`               | JSONB       | Nullable. AI blurb, tags, relevance score (see shape below) |
 | `created_at`, `updated_at` | timestamptz |                                                             |
@@ -190,7 +190,7 @@ Single-row table. Stores interest weights, context prose, and per-channel notes 
 | `ContentKind`      | `video`                               | `article`       |
 | `BodyKind`         | `transcript`                          | `markdown`      |
 | `BodyStatus`       | `pending`, `available`, `unavailable` |                 |
-| `ProcessingStatus` | `ingested`                            | `kept`, etc.    |
+| `ProcessingStatus` | `ingested`, `failed`                  |                 |
 | `UserStatus`       | `unread`, `interested`, `dismissed`   |                 |
 
 ### Migrations
@@ -301,12 +301,15 @@ Enriches each ingested item with a digest blurb, tags, and relevance score using
 ```text
 app/processing/
 ├── digest.py              # Prompt construction + OpenAI call
+├── deep.py                # Tier 2 outline + summary LLM calls
 ├── sampling.py            # Transcript excerpt logic (first ~15 min)
 ├── operations/
-│   └── enrichment.py      # DB queries: items needing enrichment, save payload
+│   ├── enrichment.py      # DB queries: items needing enrichment, save payload
+│   └── artifacts.py       # DB queries: items needing deep, save content_artifacts
 ├── jobs/
-│   └── enrich_items.py    # Iterates items, calls digest, saves, commits per-item
-└── runner.py              # run_enrichment() entrypoint
+│   ├── enrich_items.py    # Iterates items, calls digest, saves, commits per-item
+│   └── deep_process_item.py  # Outline + summary on saved items, commits per-item
+└── runner.py              # run_enrichment(), run_deep_for_item(), run_deep_pending()
 ```
 
 Enrichment is idempotent: re-runs skip items where `enrichment IS NOT NULL` and `profile_version` matches the current interest profile version.
@@ -347,6 +350,8 @@ All `/api` routes except `/api/auth/login` and `/health` require `Authorization:
 | `GET`  | `/api/health`         | No   | Health check (API-prefixed alias)                        |
 | `POST` | `/api/auth/login`     | No   | `{ username, password }` → `{ access_token, token_type }` |
 | `GET`  | `/api/items`          | Yes  | Paginated content library (see params below)             |
+| `GET`  | `/api/items/{id}`     | Yes  | Single item with optional Tier 2 artifact                |
+| `PATCH`| `/api/items/{id}/status` | Yes | Update triage status; Save triggers deep job in background |
 | `GET`  | `/api/subscriptions`  | Yes  | Active subscriptions ordered by title                    |
 
 `GET /api/items` query params:
@@ -531,7 +536,7 @@ ingest/adapters/substack.py     # RSS or scrape → ContentItemDraft + BodyDraft
 | Digest blurb + tags                 | `processing/`                        | Done           |
 | Library UI                          | `api/` + frontend `/library`         | Done           |
 | Weekly digest UI                    | filter on `user_status` + time range | Not built      |
-| Deep processing on kept items       | `processing/` + `content_artifacts`  | Schema only    |
+| Deep processing on kept items       | `processing/` + `content_artifacts`  | Done           |
 | Chat with citations                 | `retrieval/` (not built)             | Not built      |
 
 ---
@@ -547,5 +552,5 @@ ingest/adapters/substack.py     # RSS or scrape → ContentItemDraft + BodyDraft
 | FastAPI API (`/api/items`, auth)   | Done (`api/`)                                   |
 | Login + content library UI         | Done (React SPA, `pages/LoginPage`, `LibraryPage`) |
 | Weekly digest surface              | Not built                                       |
-| Deep processing (Tier 2)           | Not built                                       |
+| Deep processing (Tier 2)           | Done (`processing/jobs/deep_process_item.py`)     |
 | Chat (Tier 3)                      | Not built                                       |
