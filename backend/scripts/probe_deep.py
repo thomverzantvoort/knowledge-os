@@ -4,21 +4,27 @@ from uuid import UUID
 
 from sqlalchemy import select
 
+from app.config import settings
 from app.database.models.content_body import ContentBody
 from app.database.models.content_item import ContentItem
 from app.database.models.enums import BodyKind, BodyStatus, OutputLanguage
 from app.database.session import get_session
 from app.processing.deep import (
     OutlineResult,
-    build_outline_messages,
+    build_outline_chunk_messages,
+    build_outline_merge_messages,
     build_summary_messages,
     parse_outline_json,
-    run_outline,
+    run_outline_pipeline,
     run_summary,
 )
 from app.processing.digest import InterestProfileInput
 from app.processing.operations.enrichment import load_interest_profile
-from app.processing.sampling import format_transcript_with_timestamps
+from app.processing.sampling import (
+    chunk_snippets_for_outline,
+    format_transcript_with_timestamps,
+    transcript_duration_seconds,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +71,7 @@ def _load_transcript_body(session, item_id: UUID) -> ContentBody:
     return body
 
 
-def _require_transcript(item: ContentItem, body: ContentBody) -> str:
+def _require_transcript(item: ContentItem, body: ContentBody) -> list[dict]:
     if item.body_status != BodyStatus.AVAILABLE:
         raise RuntimeError(
             f"Transcript not available (body_status={item.body_status.value})"
@@ -75,7 +81,7 @@ def _require_transcript(item: ContentItem, body: ContentBody) -> str:
     formatted = format_transcript_with_timestamps(body.snippets)
     if not formatted:
         raise RuntimeError("Transcript snippets produced empty text")
-    return formatted
+    return body.snippets
 
 
 def _load_outline_from_json(raw: str | None) -> OutlineResult:
@@ -84,6 +90,20 @@ def _load_outline_from_json(raw: str | None) -> OutlineResult:
             "MODE=summary requires OUTLINE_JSON from a prior outline run"
         )
     return parse_outline_json(raw)
+
+
+def _describe_outline_pipeline(snippets: list[dict]) -> str:
+    duration_seconds = transcript_duration_seconds(snippets)
+    if duration_seconds < settings.deep_outline_chunk_threshold_seconds:
+        return "single-shot"
+    chunks = chunk_snippets_for_outline(
+        snippets,
+        chunk_seconds=settings.deep_outline_chunk_seconds,
+        overlap_seconds=settings.deep_outline_chunk_overlap_seconds,
+    )
+    if len(chunks) <= 1:
+        return "single-shot"
+    return f"chunked ({len(chunks)} chunks)"
 
 
 def probe_deep(
@@ -111,10 +131,14 @@ def probe_deep(
             output_language=resolved_output_language,
         )
 
-        timestamped_transcript = _require_transcript(item, body)
+        snippets = _require_transcript(item, body)
+        timestamped_transcript = format_transcript_with_timestamps(snippets)
         outline_for_summary = (
             _load_outline_from_json(outline_json) if mode == "summary" else None
         )
+
+    duration_seconds = transcript_duration_seconds(snippets)
+    pipeline_label = _describe_outline_pipeline(snippets)
 
     print("Item:", item.id)
     print("  external_id:", item.external_id)
@@ -122,33 +146,67 @@ def probe_deep(
     print("  body_status:", item.body_status.value)
     print("  transcript_language:", body.language_code)
     print("  output_language:", resolved_output_language.value)
-    print("  snippet_count:", len(body.snippets or []))
+    print("  snippet_count:", len(snippets))
+    print("  transcript_duration_seconds:", int(duration_seconds))
     print("  transcript_chars:", len(timestamped_transcript))
+    print("  outline_pipeline:", pipeline_label)
     print("  mode:", mode)
     print()
 
     outline_result: OutlineResult | None = outline_for_summary
 
     if mode in ("outline", "both"):
-        outline_messages = build_outline_messages(
-            title=item.title,
-            author=item.author,
-            timestamped_transcript=timestamped_transcript,
-            output_language=resolved_output_language,
-            content_language_code=body.language_code,
-        )
-        _print_messages("=== OUTLINE PROMPT ===", outline_messages)
+        if pipeline_label.startswith("chunked"):
+            chunks = chunk_snippets_for_outline(
+                snippets,
+                chunk_seconds=settings.deep_outline_chunk_seconds,
+                overlap_seconds=settings.deep_outline_chunk_overlap_seconds,
+            )
+            for chunk in chunks:
+                chunk_messages = build_outline_chunk_messages(
+                    title=item.title,
+                    author=item.author,
+                    chunk=chunk,
+                    output_language=resolved_output_language,
+                    content_language_code=body.language_code,
+                )
+                window = f"{int(chunk.start_seconds)}-{int(chunk.end_seconds)}s"
+                _print_messages(f"=== CHUNK OUTLINE PROMPT ({window}) ===", chunk_messages)
 
-        if call_model:
-            outline_result = run_outline(
+            merge_messages = build_outline_merge_messages(
+                title=item.title,
+                author=item.author,
+                duration_seconds=duration_seconds,
+                chunk_outlines=[],
+                output_language=resolved_output_language,
+                content_language_code=body.language_code,
+            )
+            _print_messages("=== MERGE OUTLINE PROMPT (sample) ===", merge_messages)
+        else:
+            from app.processing.deep import build_outline_messages
+
+            outline_messages = build_outline_messages(
                 title=item.title,
                 author=item.author,
                 timestamped_transcript=timestamped_transcript,
                 output_language=resolved_output_language,
                 content_language_code=body.language_code,
             )
+            _print_messages("=== OUTLINE PROMPT ===", outline_messages)
+
+        if call_model:
+            outline_result = run_outline_pipeline(
+                snippets=snippets,
+                title=item.title,
+                author=item.author,
+                output_language=resolved_output_language,
+                content_language_code=body.language_code,
+            )
             print("=== OUTLINE ===")
             print(outline_result.model_dump_json(indent=2))
+            print("  chapter_count:", len(outline_result.chapters))
+            if outline_result.chapters:
+                print("  last_start_seconds:", outline_result.chapters[-1].start_seconds)
             print()
 
     if mode in ("summary", "both"):

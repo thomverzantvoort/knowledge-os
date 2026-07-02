@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-5.4-mini"
     enrichment_transcript_max_seconds: int = 900
     enrichment_window_hours: int | None = None
+    deep_outline_chunk_seconds: int = 1200
+    deep_outline_chunk_overlap_seconds: int = 60
+    deep_outline_chunk_threshold_seconds: int = 1800
 
     allowed_origins: str = "http://localhost:5173"
 

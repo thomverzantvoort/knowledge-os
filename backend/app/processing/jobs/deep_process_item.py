@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database.models.content_item import ContentItem
 from app.database.models.enums import ProcessingStatus
-from app.processing.deep import run_outline, run_summary
+from app.processing.deep import run_outline_pipeline, run_summary
 from app.processing.digest import InterestProfileInput
 from app.processing.operations.artifacts import (
     artifact_is_complete,
@@ -85,8 +85,7 @@ def _run_deep_for_item(session: Session, item: ContentItem, body) -> DeepProcess
         author=item.author,
         output_language=profile.output_language,
     )
-    timestamped_transcript = format_transcript_with_timestamps(body.snippets)
-    if not timestamped_transcript:
+    if not body.snippets or not format_transcript_with_timestamps(body.snippets):
         logger.info(
             "Deep processing skipped: empty transcript for item %s (%s)",
             item.id,
@@ -94,10 +93,10 @@ def _run_deep_for_item(session: Session, item: ContentItem, body) -> DeepProcess
         )
         return "skipped"
 
-    outline = run_outline(
+    outline = run_outline_pipeline(
+        snippets=body.snippets,
         title=item.title,
         author=item.author,
-        timestamped_transcript=timestamped_transcript,
         output_language=profile.output_language,
         content_language_code=body.language_code,
     )

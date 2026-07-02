@@ -138,9 +138,9 @@ def test_process_deep_item_runs_outline_and_summary_and_saves():
             return_value=_profile(),
         ),
         patch(
-            "app.processing.jobs.deep_process_item.run_outline",
+            "app.processing.jobs.deep_process_item.run_outline_pipeline",
             return_value=_outline(),
-        ) as run_outline,
+        ) as run_outline_pipeline,
         patch(
             "app.processing.jobs.deep_process_item.run_summary",
             return_value=_summary(),
@@ -153,7 +153,7 @@ def test_process_deep_item_runs_outline_and_summary_and_saves():
         result = process_deep_item(session, item.id)
 
     assert result == "processed"
-    run_outline.assert_called_once()
+    run_outline_pipeline.assert_called_once()
     run_summary.assert_called_once()
     save_artifact.assert_called_once()
     reset_status.assert_called_once_with(session, item)
@@ -177,7 +177,7 @@ def test_process_deep_item_marks_failed_on_llm_error():
             return_value=_profile(),
         ),
         patch(
-            "app.processing.jobs.deep_process_item.run_outline",
+            "app.processing.jobs.deep_process_item.run_outline_pipeline",
             side_effect=RuntimeError("llm down"),
         ),
         patch("app.processing.jobs.deep_process_item.mark_deep_failed") as mark_failed,
