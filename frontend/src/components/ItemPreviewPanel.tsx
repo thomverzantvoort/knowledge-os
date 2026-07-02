@@ -37,12 +37,22 @@ type ItemPreviewPanelProps = {
   item: ContentItem | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  mode?: 'readonly' | 'triage'
+  onSave?: () => void
+  onPass?: () => void
+  actionPending?: boolean
+  actionError?: string | null
 }
 
 export function ItemPreviewPanel({
   item,
   open,
   onOpenChange,
+  mode = 'readonly',
+  onSave,
+  onPass,
+  actionPending = false,
+  actionError = null,
 }: ItemPreviewPanelProps) {
   if (!item) {
     return null
@@ -98,7 +108,31 @@ export function ItemPreviewPanel({
           ) : null}
         </div>
 
-        <SheetFooter>
+        <SheetFooter className="gap-3">
+          {actionError ? (
+            <p className="w-full text-sm text-destructive" role="alert">
+              {actionError}
+            </p>
+          ) : null}
+          {mode === 'triage' ? (
+            <div className="flex w-full flex-col gap-2 sm:flex-row">
+              <Button
+                className="flex-1"
+                disabled={actionPending}
+                onClick={onSave}
+              >
+                {actionPending ? 'Saving...' : 'Save'}
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1"
+                disabled={actionPending}
+                onClick={onPass}
+              >
+                {actionPending ? 'Passing...' : 'Pass'}
+              </Button>
+            </div>
+          ) : null}
           <Button variant="outline" asChild>
             <a href={item.url} target="_blank" rel="noreferrer">
               Open on YouTube

@@ -61,21 +61,19 @@ export function AppSidebar() {
 
       <nav className="flex flex-1 flex-col gap-1 p-3">
         <NavItem
+          to="/inbox"
+          icon={<Inbox className="size-4" />}
+          label="Inbox"
+        />
+        <NavItem
+          to="/library"
+          icon={<Library className="size-4" />}
+          label="Library"
+        />
+        <NavItem
           to="/history"
           icon={<History className="size-4" />}
           label="History"
-        />
-        <NavItem
-          icon={<Inbox className="size-4" />}
-          label="Inbox"
-          disabled
-          hint="Coming soon"
-        />
-        <NavItem
-          icon={<Library className="size-4" />}
-          label="Library"
-          disabled
-          hint="Coming soon"
         />
       </nav>
 

@@ -1,5 +1,12 @@
 import { apiBaseUrl } from '@/lib/env'
-import type { PaginatedItems, TimeWindow, TokenResponse } from '@/lib/types'
+import type {
+  ContentItem,
+  ContentItemDetail,
+  PaginatedItems,
+  TimeWindow,
+  TokenResponse,
+  UserStatus,
+} from '@/lib/types'
 
 const TOKEN_STORAGE_KEY = 'knowledge_os_token'
 
@@ -79,23 +86,87 @@ export async function login(
   )
 }
 
+export type FetchItemsParams = {
+  status?: 'all' | UserStatus
+  windowHours?: number
+  allTime?: boolean
+  limit: number
+  offset: number
+}
+
+export async function fetchItems(params: FetchItemsParams): Promise<PaginatedItems> {
+  const search = new URLSearchParams({
+    sort: 'chronological',
+    status: params.status ?? 'all',
+    limit: String(params.limit),
+    offset: String(params.offset),
+  })
+
+  if (params.allTime) {
+    search.set('all_time', 'true')
+  } else if (params.windowHours !== undefined) {
+    search.set('window_hours', String(params.windowHours))
+  }
+
+  return apiFetch<PaginatedItems>(`/items?${search.toString()}`)
+}
+
+export async function fetchInboxItems(params: {
+  limit: number
+  offset: number
+}): Promise<PaginatedItems> {
+  return fetchItems({
+    status: 'unread',
+    allTime: true,
+    limit: params.limit,
+    offset: params.offset,
+  })
+}
+
+export async function fetchLibraryItems(params: {
+  limit: number
+  offset: number
+}): Promise<PaginatedItems> {
+  return fetchItems({
+    status: 'interested',
+    allTime: true,
+    limit: params.limit,
+    offset: params.offset,
+  })
+}
+
 export async function fetchHistoryItems(params: {
   window: TimeWindow
   limit: number
   offset: number
 }): Promise<PaginatedItems> {
-  const search = new URLSearchParams({
-    sort: 'chronological',
-    status: 'all',
-    limit: String(params.limit),
-    offset: String(params.offset),
-  })
-
   if (params.window === 'all') {
-    search.set('all_time', 'true')
-  } else {
-    search.set('window_hours', params.window)
+    return fetchItems({
+      status: 'all',
+      allTime: true,
+      limit: params.limit,
+      offset: params.offset,
+    })
   }
 
-  return apiFetch<PaginatedItems>(`/items?${search.toString()}`)
+  return fetchItems({
+    status: 'all',
+    windowHours: Number(params.window),
+    limit: params.limit,
+    offset: params.offset,
+  })
+}
+
+export async function fetchItem(id: string): Promise<ContentItemDetail> {
+  return apiFetch<ContentItemDetail>(`/items/${id}`)
+}
+
+export async function updateItemStatus(
+  id: string,
+  status: UserStatus,
+): Promise<ContentItem> {
+  return apiFetch<ContentItem>(`/items/${id}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  })
 }

@@ -33,6 +33,38 @@ export type ContentItem = {
   enrichment: Enrichment | null
 }
 
+export type ChapterSection = {
+  start_seconds: number
+  title: string
+  narrative: string
+}
+
+export type ActionableItem = {
+  what: string
+  why: string
+  effort: 'low' | 'medium' | 'high'
+}
+
+export type ArtifactSummary = {
+  overview: string
+  key_takeaways: string[]
+  actionable: ActionableItem[]
+  learn_or_prioritize: string[]
+  skepticism: string
+  worth_watching: string
+}
+
+export type Artifact = {
+  chapters: ChapterSection[]
+  summary: ArtifactSummary
+  model: string | null
+  generated_at: string
+}
+
+export type ContentItemDetail = ContentItem & {
+  artifact: Artifact | null
+}
+
 export type PaginatedItems = {
   items: ContentItem[]
   total: number
