@@ -72,6 +72,15 @@ export type PaginatedItems = {
   offset: number
 }
 
+export type SyncResult = {
+  subscriptions_synced: number
+  items_created: number
+  bodies_fetched: number
+  bodies_failed: number
+  enriched: number
+  enrichment_failed: number
+}
+
 export type TokenResponse = {
   access_token: string
   token_type: string

@@ -3,6 +3,7 @@ import type {
   ContentItem,
   ContentItemDetail,
   PaginatedItems,
+  SyncResult,
   TimeWindow,
   TokenResponse,
   UserStatus,
@@ -168,5 +169,11 @@ export async function updateItemStatus(
   return apiFetch<ContentItem>(`/items/${id}/status`, {
     method: 'PATCH',
     body: JSON.stringify({ status }),
+  })
+}
+
+export async function syncSubscriptions(): Promise<SyncResult> {
+  return apiFetch<SyncResult>('/subscriptions/sync', {
+    method: 'POST',
   })
 }

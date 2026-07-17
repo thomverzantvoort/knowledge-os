@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Loader2, RefreshCw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import { ContentCard } from '@/components/ContentCard'
@@ -6,7 +7,12 @@ import { ItemPreviewPanel } from '@/components/ItemPreviewPanel'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { usePaginatedItems } from '@/hooks/use-paginated-items'
-import { ApiError, fetchInboxItems, updateItemStatus } from '@/lib/api'
+import {
+  ApiError,
+  fetchInboxItems,
+  syncSubscriptions,
+  updateItemStatus,
+} from '@/lib/api'
 import type { ContentItem } from '@/lib/types'
 
 function sortByRelevance(items: ContentItem[]): ContentItem[] {
@@ -23,6 +29,10 @@ export function InboxPage() {
   const [previewOpen, setPreviewOpen] = useState(false)
   const [actionPending, setActionPending] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
+  const [syncPending, setSyncPending] = useState(false)
+  const [syncError, setSyncError] = useState<string | null>(null)
+  const [syncMessage, setSyncMessage] = useState<string | null>(null)
 
   const {
     items,
@@ -36,6 +46,7 @@ export function InboxPage() {
   } = usePaginatedItems({
     fetchPage: fetchInboxItems,
     sortItems: sortByRelevance,
+    resetKey: refreshKey,
   })
 
   function handleSelect(item: ContentItem) {
@@ -49,6 +60,29 @@ export function InboxPage() {
     if (!open) {
       setSelectedItem(null)
       setActionError(null)
+    }
+  }
+
+  async function handleRefresh() {
+    setSyncPending(true)
+    setSyncError(null)
+    setSyncMessage(null)
+
+    try {
+      const result = await syncSubscriptions()
+      const created = result.items_created
+      setSyncMessage(
+        created === 1 ? '1 new item' : `${created} new items`,
+      )
+      setRefreshKey((current) => current + 1)
+    } catch (caught: unknown) {
+      setSyncError(
+        caught instanceof ApiError
+          ? caught.message
+          : 'Failed to refresh inbox.',
+      )
+    } finally {
+      setSyncPending(false)
     }
   }
 
@@ -112,7 +146,27 @@ export function InboxPage() {
             <p className="text-sm text-muted-foreground">
               Untriaged items waiting for Save or Pass
             </p>
+            {syncError ? (
+              <p className="text-sm text-destructive" role="alert">
+                {syncError}
+              </p>
+            ) : null}
+            {syncMessage && !syncError ? (
+              <p className="text-sm text-muted-foreground">{syncMessage}</p>
+            ) : null}
           </div>
+          <Button
+            variant="outline"
+            disabled={syncPending}
+            onClick={handleRefresh}
+          >
+            {syncPending ? (
+              <Loader2 className="animate-spin" data-icon="inline-start" />
+            ) : (
+              <RefreshCw data-icon="inline-start" />
+            )}
+            {syncPending ? 'Refreshing...' : 'Refresh'}
+          </Button>
         </div>
       </header>
 

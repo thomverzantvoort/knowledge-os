@@ -48,6 +48,15 @@ class SubscriptionOut(BaseModel):
     url: str | None
 
 
+class SyncResultOut(BaseModel):
+    subscriptions_synced: int
+    items_created: int
+    bodies_fetched: int
+    bodies_failed: int
+    enriched: int
+    enrichment_failed: int
+
+
 class PaginatedItemsOut(BaseModel):
     items: list[ContentItemOut]
     total: int
